@@ -35,6 +35,18 @@ jobs:
         if: steps.project.outputs.present == 'true'
         with:
           gradle-version: '8.10.2'
+      - name: Install icon rendering dependency
+        if: steps.project.outputs.present == 'true'
+        run: python3 -m pip install --disable-pip-version-check Pillow==11.3.0
+      - name: Generate 3D brick icons and mapping files
+        if: steps.project.outputs.present == 'true'
+        run: python3 tools/generate_brick_icons.py
+      - name: Upload icon coverage report
+        if: steps.project.outputs.present == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: brickforge-icon-report
+          path: icon-report.json
       - name: Build debug APK
         if: steps.project.outputs.present == 'true'
         run: |
