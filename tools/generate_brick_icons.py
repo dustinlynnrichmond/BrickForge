@@ -200,6 +200,18 @@ def main():
     for name in CATALOG:ET.SubElement(cat,"item",drawable="bf_"+name)
     ET.indent(draw,space="    ")
     ET.ElementTree(draw).write(ROOT/"xml"/"drawable.xml",encoding="unicode",xml_declaration=True)
+    # Verify every output is readable, correctly sized and has visible content.
+    for name in CATALOG:
+        asset=DEST/("bf_"+name+".png")
+        with Image.open(asset) as check:
+            if check.size!=(SIZE,SIZE) or check.mode!="RGBA":
+                raise RuntimeError(f"Invalid icon output: {asset}")
+            if not check.getchannel("A").getbbox():
+                raise RuntimeError(f"Blank icon output: {asset}")
+    for entry in root.findall("item"):
+        drawable=entry.get("drawable","")
+        if not (DEST/(drawable+".png")).is_file():
+            raise RuntimeError(f"Missing mapped drawable: {drawable}")
     Path("icon-report.json").write_text(json.dumps({"icons":len(CATALOG),"mapped_packages":len(PACKAGES),"unmapped_icons":sorted(set(CATALOG)-set(PACKAGES.values()))},indent=2))
     print(f"Generated {len(CATALOG)} brick icons, {len(PACKAGES)} package mappings")
 if __name__=="__main__":main()
