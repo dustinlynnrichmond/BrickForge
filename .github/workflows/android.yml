@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   android:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Check Android project
@@ -24,7 +24,7 @@ jobs:
             echo "present=false" >> "$GITHUB_OUTPUT"
             echo "::notice::Android project not added yet; no APK can be built."
           fi
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         if: steps.project.outputs.present == 'true'
         with:
           distribution: temurin
@@ -35,6 +35,10 @@ jobs:
         if: steps.project.outputs.present == 'true'
         with:
           gradle-version: '8.10.2'
+      - name: Install Android SDK platform
+        if: steps.project.outputs.present == 'true'
+        run: |
+          sdkmanager "platforms;android-35" "build-tools;35.0.0"
       - name: Install icon rendering dependency
         if: steps.project.outputs.present == 'true'
         run: python3 -m pip install --disable-pip-version-check Pillow==11.3.0
@@ -50,7 +54,7 @@ jobs:
       - name: Build debug APK
         if: steps.project.outputs.present == 'true'
         run: |
-          gradle --no-daemon :app:assembleDebug
+          gradle --no-daemon --stacktrace :app:assembleDebug
       - uses: actions/upload-artifact@v4
         if: steps.project.outputs.present == 'true'
         with:
