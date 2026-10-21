@@ -1,0 +1,50 @@
+name: BrickForge Android CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Android project
+        id: project
+        shell: bash
+        run: |
+          if [ -f settings.gradle.kts ] || [ -f settings.gradle ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Android project not added yet; no APK can be built."
+          fi
+      - uses: actions/setup-java@v4
+        if: steps.project.outputs.present == 'true'
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        if: steps.project.outputs.present == 'true'
+      - uses: gradle/actions/setup-gradle@v4
+        if: steps.project.outputs.present == 'true'
+      - name: Build debug APK
+        if: steps.project.outputs.present == 'true'
+        run: |
+          if [ -x ./gradlew ]; then
+            ./gradlew --no-daemon :app:assembleDebug
+          else
+            echo "::error::Missing executable Gradle wrapper"
+            exit 1
+          fi
+      - uses: actions/upload-artifact@v4
+        if: steps.project.outputs.present == 'true'
+        with:
+          name: brickforge-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
