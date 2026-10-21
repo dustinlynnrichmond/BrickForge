@@ -3,7 +3,7 @@
 Produces 512px icons and validates mapped resources; no initials/monograms.
 """
 from pathlib import Path
-from PIL import Image, ImageDraw, ImageFont, ImageFilter
+from PIL import Image, ImageDraw, ImageFilter
 import math, json, xml.etree.ElementTree as ET
 
 ROOT=Path("app/src/main/res")
@@ -192,7 +192,7 @@ def main():
     root=ET.Element("resources")
     for package,name in PACKAGES.items():
         if name not in CATALOG:raise ValueError(name)
-        ET.SubElement(root,"item",component=f"ComponentInfo{{{package}/}}",drawable="bf_"+name)
+        # ComponentInfo requires a real activity class; package-only mappings are invalid.\n        # Resolve launcher activities from device testing before publishing appfilter.\n        pass
     ET.indent(root,space="    ")
     (ROOT/"xml").mkdir(parents=True,exist_ok=True)
     ET.ElementTree(root).write(ROOT/"xml"/"appfilter.xml",encoding="unicode",xml_declaration=True)
@@ -212,6 +212,6 @@ def main():
         drawable=entry.get("drawable","")
         if not (DEST/(drawable+".png")).is_file():
             raise RuntimeError(f"Missing mapped drawable: {drawable}")
-    Path("icon-report.json").write_text(json.dumps({"icons":len(CATALOG),"mapped_packages":len(PACKAGES),"unmapped_icons":sorted(set(CATALOG)-set(PACKAGES.values()))},indent=2))
-    print(f"Generated {len(CATALOG)} brick icons, {len(PACKAGES)} package mappings")
+    Path("icon-report.json").write_text(json.dumps({"icons":len(CATALOG),"verified_component_mappings":0,"candidate_packages":len(PACKAGES),"unmapped_icons":sorted(set(CATALOG)-set(PACKAGES.values()))},indent=2))
+    print(f"Generated {len(CATALOG)} brick icons; {len(PACKAGES)} candidate packages await verified launcher activities")
 if __name__=="__main__":main()
